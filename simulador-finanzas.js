@@ -1,5 +1,12 @@
 // Variables globales
 let gastosArr    = []
+let tipoPagoArr  = [
+    {
+        id:    1,
+        medio: 'efectivo'
+        
+    }
+]
 let sdoDisp   = 0
 let sueldo    = 0
 let numGastos = 0
@@ -8,97 +15,75 @@ class Gasto {
     constructor (id, monto, tipoPago, fecha) {
         this.id        = id;
         this.monto     = monto;
-        this.tipoPago  = tipoPago;
+        this.tipoDePago  = tipoPago;
         this.fecha     = fecha;
     }
 }
 
+const formGasto = document.getElementById('formGasto')
+console.log(formGasto)
 
-const creaGastos = (gastos) => {
-    // Variables locales usadas para capturar los datos del gasto
-    let id       
-    let monto    
-    let tipoPago 
-    let date     
+// Evento para crear objeto de gastos en array
+formGasto.addEventListener('submit', (e) => {
+    e.preventDefault()
+    
+    const idGasto   = gastosArr.length + 1
+    const monto     = document.getElementById('montoGasto').value
+    const tipoPago  = document.getElementById('tipoPago').value
+    const fechaPago = document.getElementById('fechaPago').value
 
-    //Funcion que valida que el tipo de pago sea valido
-    const evaluaTipoPago = () => {
+    gastosArr.push ( new Gasto( idGasto, monto, tipoPago, fechaPago ) ); 
+    formGasto.reset()
+    console.log(gastosArr)
 
-        tipoPago = prompt (`Gasto ${id} | Ingresa el tipo de pago` ).toLowerCase();
 
-        if (tipoPago == 'efectivo' || tipoPago == 'tarjeta' || tipoPago == 'vales') {
-            return tipoPago
-        } else {
-            let opcion = confirm('Tipo de pago no valido, solo se acepta efectivo, tarjeta o vales. ¿Deseas reintentar?')
-            if (opcion == true) {
-               return evaluaTipoPago();
-            } else {
-                return 'otro'
-            }
-            
-        }
+})
 
-    }
+// Evento para mostrar gastos
 
-    //Iteracion para solicitar el numero de gastos ingresado por el usuario
-    for (let i = 0; i < gastos; i++) {
+const botonGastos = document.getElementById('botonGastos')
+const divGastos   = document.getElementById('divGastos')
 
-        id       = i + 1; 
-        monto    = parseFloat ( prompt(`Gasto ${id} | Ingresa monto`));
-        tipoPago = evaluaTipoPago();
-        date     = new Date().toLocaleDateString();
+botonGastos.addEventListener('click', () => {
+    divGastos.innerHTML = ''
+    gastosArr.forEach( (gasto, indice ) => {
+        divGastos.innerHTML += `
+        
+        <div class="card" id="gasto${gasto.id}" style="width: 18rem; margin:3px">
+            <div class="card-body">
+                <h5 class="card-title"> Gasto #${gasto.id} </h5>
+                <p class="card-text"> Monto: ${gasto.monto} </p>
+                <p class="card-text"> Tipo pago: ${gasto.tipoDePago} </p>
+                <p class="card-text"> Fecha: ${gasto.fecha} </p>
+            </div>
+        </div>
+        `
+    })
+})
 
-        //Crea un nuevo objeto de Gasto en el arreglo
-        gastosArr.push ( new Gasto( id, monto, tipoPago, date ) ); 
-    }
-    console.log (gastosArr)
+// Evento para calcular el saldo disponible
 
-}
+const formSaldo = document.getElementById('formSaldo')
+const divSaldo  = document.getElementById('divSaldo')
 
-//Funcion para calcular el saldo disponible despues de gastos
-const restaGastos = (sueldo) => {
-
-    gastosArr.forEach ( obj => {
+formSaldo.addEventListener('submit', (e) => {
+    e.preventDefault()
+    let sueldo = document.getElementById('sueldo').value
+    console.log(sueldo, typeof(sueldo))
+    gastosArr.forEach( obj => {
         sueldo -= obj.monto
-
     })
-    return sueldo;
-}
-
-//Imprime el saldo disponible o deuda
-const imprimeSaldo = () => {
-    if (sdoDisp > 0) {
-        console.log (`El saldo disponible es de ${sdoDisp}`)
-    } else {
-        console.log(`Tu saldo es negativo: ${sdoDisp}`)
-    }
-}
-
-const montoPorTipoPago = (filtro) => {
-    let suma = 0
-    gastosArr.forEach( elem => {
-        if (elem.tipoPago == filtro) {
-            suma += elem.monto
-        }
-    })
-
-    console.log(`El monto gastado con ${filtro} es: ${suma}`)
-}
+    console.log(sueldo)
+    divSaldo.innerHTML = `
+ 
+        <div class="card" style="width: 18rem; margin:3px">
+            <div class="card-body">
+                <h5 class="card-title"> Saldo disponible: ${sueldo} </h5>
+            </div>
+        </div>
+    
+    `
+}) 
 
 
-sueldo    = parseFloat( prompt("Ingresa tu sueldo") );
-numGastos = parseInt( prompt("Ingresa numero de gastos"))
 
-//Registra datos de los gastos
-creaGastos(numGastos);
-
-//Calcula el saldo disponible despues de gastos
-sdoDisp  = restaGastos(sueldo)
-console.table(sdoDisp)
-
-//Imprime saldo disponible o deuda
-imprimeSaldo()
-
-montoPorTipoPago('efectivo')
-montoPorTipoPago('tarjeta')
-montoPorTipoPago('vales')
