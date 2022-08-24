@@ -1,15 +1,6 @@
 // Variables globales
 let gastosArr    = []
-let tipoPagoArr  = [
-    {
-        id:    1,
-        medio: 'efectivo'
-        
-    }
-]
-let sdoDisp   = 0
-let sueldo    = 0
-let numGastos = 0
+let sueldo    
 
 class Gasto {
     constructor (id, monto, tipoPago, fecha) {
@@ -20,33 +11,65 @@ class Gasto {
     }
 }
 
-const formGasto = document.getElementById('formGasto')
-console.log(formGasto)
+// Declaraciones del DOM
+let sueldoInput   = document.getElementById('sueldoInput')
+const formGasto   = document.getElementById('formGasto')
+const botonGastos = document.getElementById('botonGastos')
+const divGastos   = document.getElementById('divGastos')
+const formSaldo   = document.getElementById('formSaldo')
+const divSaldo    = document.getElementById('divSaldo')
+
+
+// Funcion de inicio
+
+const iniciaApp = () => {
+    
+    // Obetnemos el sueldo de LS 
+    let sueldoLS = localStorage.getItem('sueldo')
+    
+    if ( sueldoLS ) {
+        sueldoInput.value = sueldoLS
+    } else {
+        // Inicializamos en cero por primera vez
+        sueldoInput.value = 0
+        sueldo = 0
+        localStorage.setItem('sueldo', 0)
+    }
+
+    // Obtenemos los gastos anteriores
+    let gastoLS = localStorage.getItem('gastos')
+    if ( gastoLS ) {
+        gastosArr = JSON.parse(gastoLS)
+    } 
+}
 
 // Evento para crear objeto de gastos en array
 formGasto.addEventListener('submit', (e) => {
     e.preventDefault()
     
+    // Obtenemos los valores del formulariode gastos
     const idGasto   = gastosArr.length + 1
     const monto     = document.getElementById('montoGasto').value
     const tipoPago  = document.getElementById('tipoPago').value
     const fechaPago = document.getElementById('fechaPago').value
-
+    
+    // Creamos el objeto gasto y lo guardamos en el array
     gastosArr.push ( new Gasto( idGasto, monto, tipoPago, fechaPago ) ); 
     formGasto.reset()
-    console.log(gastosArr)
-
+    
+    // Guardamos el arreglo modificado en LS
+    localStorage.setItem('gastos', JSON.stringify(gastosArr))
 
 })
 
 // Evento para mostrar gastos
 
-const botonGastos = document.getElementById('botonGastos')
-const divGastos   = document.getElementById('divGastos')
-
 botonGastos.addEventListener('click', () => {
+
+    console.log(gastosArr)
     divGastos.innerHTML = ''
     gastosArr.forEach( (gasto, indice ) => {
+
         divGastos.innerHTML += `
         
         <div class="card" id="gasto${gasto.id}" style="width: 18rem; margin:3px">
@@ -62,18 +85,21 @@ botonGastos.addEventListener('click', () => {
 })
 
 // Evento para calcular el saldo disponible
-
-const formSaldo = document.getElementById('formSaldo')
-const divSaldo  = document.getElementById('divSaldo')
-
 formSaldo.addEventListener('submit', (e) => {
     e.preventDefault()
-    let sueldo = document.getElementById('sueldo').value
-    console.log(sueldo, typeof(sueldo))
+
+    // Tomamos el sueldo del input
+    sueldo =  sueldoInput.value
+
+    // Recorre el array de gastos y va restando del sueldo
     gastosArr.forEach( obj => {
         sueldo -= obj.monto
     })
-    console.log(sueldo)
+
+    // El sueldo resultante lo guardamos en LS y lo asignamos como nuevo valor en el formulario
+    sueldoInput.value = sueldo
+    localStorage.setItem('sueldo', sueldoInput.value)
+
     divSaldo.innerHTML = `
  
         <div class="card" style="width: 18rem; margin:3px">
@@ -85,5 +111,5 @@ formSaldo.addEventListener('submit', (e) => {
     `
 }) 
 
-
+iniciaApp()
 
