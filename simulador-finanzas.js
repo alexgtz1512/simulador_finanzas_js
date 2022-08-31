@@ -14,10 +14,10 @@ class Gasto {
 // Declaraciones del DOM
 let sueldoInput   = document.getElementById('sueldoInput')
 const formGasto   = document.getElementById('formGasto')
-const botonGastos = document.getElementById('botonGastos')
 const divGastos   = document.getElementById('divGastos')
 const formSaldo   = document.getElementById('formSaldo')
 const divSaldo    = document.getElementById('divSaldo')
+
 
 
 // Funcion de inicio
@@ -41,6 +41,10 @@ const iniciaApp = () => {
     if ( gastoLS ) {
         gastosArr = JSON.parse(gastoLS)
     } 
+
+    // Mostramos los gastos almacenados en LS 
+    mostrarGastos();    
+
 }
 
 // Evento para crear objeto de gastos en array
@@ -60,29 +64,42 @@ formGasto.addEventListener('submit', (e) => {
     // Guardamos el arreglo modificado en LS
     localStorage.setItem('gastos', JSON.stringify(gastosArr))
 
+    // Mostramos el gastos en el DOM
+    mostrarGastos()
+
+    // Alerta de creacion de gasto exitoso
+    Swal.fire(
+        'Hecho!',
+        'El gasto ha sido creado correctamente.',
+        'success'
+      )
+
 })
 
-// Evento para mostrar gastos
+// Funcion para mostrar en el DOM los gastos creados en el LocalStorage
+const mostrarGastos = () => {
 
-botonGastos.addEventListener('click', () => {
-
-    console.log(gastosArr)
-    divGastos.innerHTML = ''
-    gastosArr.forEach( (gasto, indice ) => {
-
-        divGastos.innerHTML += `
-        
-        <div class="card" id="gasto${gasto.id}" style="width: 18rem; margin:3px">
-            <div class="card-body">
-                <h5 class="card-title"> Gasto #${gasto.id} </h5>
-                <p class="card-text"> Monto: ${gasto.monto} </p>
-                <p class="card-text"> Tipo pago: ${gasto.tipoDePago} </p>
-                <p class="card-text"> Fecha: ${gasto.fecha} </p>
+        console.log(gastosArr)
+        divGastos.innerHTML = ''
+        gastosArr.forEach( (gasto ) => {
+    
+            divGastos.innerHTML += `
+            
+            <div class="card p-2 card-gasto" id="gasto${gasto.id}" style="width: 18rem; margin:3px">
+                <div class="card-body">
+                    <h5 class="card-title"> Gasto #${gasto.id} </h5>
+                    <p class="card-text"> Monto: ${gasto.monto} </p>
+                    <p class="card-text"> Tipo pago: ${gasto.tipoDePago} </p>
+                    <p class="card-text"> Fecha: ${gasto.fecha} </p>
+                </div>
+                <div class="ps-2">
+                    <button id="${gasto.id}" class="btn btn-danger"> Eliminar </button> 
+                </div>
             </div>
-        </div>
-        `
-    })
-})
+            `
+        })
+
+}
 
 // Evento para calcular el saldo disponible
 formSaldo.addEventListener('submit', (e) => {
@@ -110,6 +127,48 @@ formSaldo.addEventListener('submit', (e) => {
     
     `
 }) 
+
+// Evento para eliminar gastos en la aplicacion
+divGastos.addEventListener('click', (e) => {
+    // Obtenemos todas las cards de gastos
+    const cardGasto = document.querySelectorAll('.card-gasto')
+
+    // Armamos el id del elemento que vamos a eliminar
+    let idElim = `gasto${e.target.id}`
+    let itemElim = document.getElementById(idElim)
+
+    // El usuario toma la decision para eliminar el elemento
+    Swal.fire({
+        title: '¿Eliminar gasto?',
+        text: "Se eliminara el gasto permanentemente",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Si, eliminar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+            // Removemos el gasto seleccionado del DOM y del array
+            divGastos.removeChild(itemElim)
+
+            gastosArr.forEach((elem, indice)=> {
+                if (elem.id == e.target.id)
+                    gastosArr.splice(indice,1)
+            })
+        
+            // Guardamos el arreglo modificado en LS
+            localStorage.setItem('gastos', JSON.stringify(gastosArr))
+
+          Swal.fire(
+            'Eliminado correctamente!',
+            'El gasto ha sido eliminado de la aplicacion.',
+            'success'
+          )
+        }
+      })
+
+})
+
 
 iniciaApp()
 
