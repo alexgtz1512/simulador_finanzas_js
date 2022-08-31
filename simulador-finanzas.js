@@ -137,6 +137,8 @@ divGastos.addEventListener('click', (e) => {
     let idElim = `gasto${e.target.id}`
     let itemElim = document.getElementById(idElim)
 
+    /* NOTA: Falta agregar una condicion para omitir que se haga la eliminacion si se presiona algun otro elemento que no sea el boton de ELIMINAR, pero aún no encuentro como hacerlo*/
+
     // El usuario toma la decision para eliminar el elemento
     Swal.fire({
         title: '¿Eliminar gasto?',
