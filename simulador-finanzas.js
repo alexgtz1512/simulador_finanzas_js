@@ -1,23 +1,35 @@
 // Variables globales
+const API_KEY  = "1a392fc2341a48e37ae1e616f07e338fa0d1f41abcd13446bd6a39a12e13df87"
+let valorDolar = 0
 let gastosArr    = []
 let sueldo    
 
 class Gasto {
-    constructor (id, monto, tipoPago, fecha) {
+    constructor (id, montoPesos, montoDolares, tipoPago, fecha, status) {
         this.id        = id;
-        this.monto     = monto;
+        this.montoPesos     = montoPesos;
+        this.montoDolares   = montoDolares;
         this.tipoDePago  = tipoPago;
-        this.fecha     = fecha;
+        this.fecha       = fecha;
+        this.status      = status;
     }
 }
 
 // Declaraciones del DOM
-let sueldoInput   = document.getElementById('sueldoInput')
-const formGasto   = document.getElementById('formGasto')
-const divGastos   = document.getElementById('divGastos')
-const formSaldo   = document.getElementById('formSaldo')
-const divSaldo    = document.getElementById('divSaldo')
+let sueldoInput     = document.getElementById('sueldoInput')
+const divFormGastos = document.getElementById('divFormGastos')
+const formGasto     = document.getElementById('formGasto')
+const divGastos     = document.getElementById('divGastos')
+const formSaldo     = document.getElementById('formSaldo')
+const divSaldo      = document.getElementById('divSaldo')
 
+// Consultamos la API de BANXICO para obtener el tipo de cambio para conversion de pesos a dolar
+fetch(`https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF343410/datos/oportuno?token=${API_KEY}`)
+.then( (resp) => resp.json())
+.then( (data) => {
+    valorDolar = parseFloat(data.bmx.series[0].datos[0].dato)
+    console.log(valorDolar)
+} )
 
 
 // Funcion de inicio
@@ -29,6 +41,7 @@ const iniciaApp = () => {
     
     if ( sueldoLS ) {
         sueldoInput.value = sueldoLS
+        sueldo = sueldoLS
     } else {
         // Inicializamos en cero por primera vez
         sueldoInput.value = 0
@@ -46,89 +59,141 @@ const iniciaApp = () => {
     mostrarGastos();    
 
 }
+/**
+ * Formularios:
+ *  formSaldo: Almacena un nuevo saldo disponible y resta los gastos pendientes automaticamente
+ *  formGasto: Crea los gastos catpurados y actualiza el saldo disponible
+ */
 
-// Evento para crear objeto de gastos en array
+formSaldo.addEventListener('submit', (e) => {
+    e.preventDefault()
+    localStorage.setItem('sueldo', sueldoInput.value)
+    sueldo = sueldoInput.value
+    actzaSaldoDisp()
+    mostrarDisponible()
+    mostrarGastos()
+    mostrarMsj('success', 'Hecho!', 'El sueldo fue actualizado correctamente!')
+}) 
+
 formGasto.addEventListener('submit', (e) => {
     e.preventDefault()
     
     // Obtenemos los valores del formulariode gastos
-    const idGasto   = gastosArr.length + 1
-    const monto     = document.getElementById('montoGasto').value
-    const tipoPago  = document.getElementById('tipoPago').value
-    const fechaPago = document.getElementById('fechaPago').value
+    const idGasto    = gastosArr.length + 1
+    const montoPesos = document.getElementById('montoGasto').value
+    const tipoPago   = document.getElementById('tipoPago').value
+    const fechaPago  = document.getElementById('fechaPago').value
+    const statusApli = false;
+
+    //Calculamos el monto en dolares en base al tipo de cambio obtenido en BANXICO (API)
+    const montoDolares = (montoPesos / valorDolar).toFixed(2);
     
     // Creamos el objeto gasto y lo guardamos en el array
-    gastosArr.push ( new Gasto( idGasto, monto, tipoPago, fechaPago ) ); 
+    gastosArr.push ( new Gasto( idGasto, montoPesos, montoDolares, tipoPago, fechaPago, statusApli ) ); 
     formGasto.reset()
     
-    // Guardamos el arreglo modificado en LS
-    localStorage.setItem('gastos', JSON.stringify(gastosArr))
+    // Invocamos la funcion para actualizar el saldo disponible
+    actzaSaldoDisp()
 
-    // Mostramos el gastos en el DOM
-    mostrarGastos()
-
-    // Alerta de creacion de gasto exitoso
-    Swal.fire(
-        'Hecho!',
-        'El gasto ha sido creado correctamente.',
-        'success'
-      )
-
+    // Mostramos los gastos y el saldo disponible en el DOM
+    mostrarGastos()      
+    mostrarDisponible();
 })
 
-// Funcion para mostrar en el DOM los gastos creados en el LocalStorage
-const mostrarGastos = () => {
+/**
+ * Funciones para mostrar informacion al usuario:
+ *  mostrarGastos: Muestra los gastos creados
+ *  mostrarDisponible: Muestra el saldo disponible
+ *  mostrarMsj: Funcion para mostrar mensjes con sweet alert
+ */
 
-        console.log(gastosArr)
-        divGastos.innerHTML = ''
-        gastosArr.forEach( (gasto ) => {
-    
-            divGastos.innerHTML += `
-            
-            <div class="card p-2 card-gasto" id="gasto${gasto.id}" style="width: 18rem; margin:3px">
-                <div class="card-body">
-                    <h5 class="card-title"> Gasto #${gasto.id} </h5>
-                    <p class="card-text"> Monto: ${gasto.monto} </p>
-                    <p class="card-text"> Tipo pago: ${gasto.tipoDePago} </p>
-                    <p class="card-text"> Fecha: ${gasto.fecha} </p>
-                </div>
-                <div class="ps-2">
-                    <button id="${gasto.id}" class="btn btn-danger"> Eliminar </button> 
-                </div>
+ const mostrarGastos = () => {
+    console.log(gastosArr)
+    divGastos.innerHTML = ''
+    gastosArr.forEach( (gasto ) => {
+        let status = (gasto.status) ? 'Aplicado' : 'No aplicado'
+        divGastos.innerHTML += `
+        
+        <div class="card p-2 card-gasto" id="gasto${gasto.id}" style="width: 18rem; margin:3px">
+            <div class="card-body">
+                <h5 class="card-title"> Gasto #${gasto.id} </h5>
+                <p class="card-text"> Monto MXN: ${gasto.montoPesos} </p>
+                <p class="card-text"> Monto Dolares: ${gasto.montoDolares} </p>
+                <p class="card-text"> Tipo pago: ${gasto.tipoDePago} </p>
+                <p class="card-text"> Fecha: ${gasto.fecha} </p>
+                <p class="card-text"> Estatus: ${status} </p>
             </div>
-            `
-        })
+            <div class="ps-2">
+                <button id="${gasto.id}" class="btn btn-danger"> Eliminar </button> 
+            </div>
+        </div>
+        `
+    })
 
 }
 
-// Evento para calcular el saldo disponible
-formSaldo.addEventListener('submit', (e) => {
-    e.preventDefault()
+const mostrarDisponible = () => {
+    console.warn(sueldo)
+        // Calculamos de manera informativa el disponible en dolares
+        let sueldoDolar = (sueldo /valorDolar).toFixed(2)
 
-    // Tomamos el sueldo del input
-    sueldo =  sueldoInput.value
+        divSaldo.innerHTML = `
+     
+            <div class="card" style="width: 18rem; margin:3px; font-weight:bold;">
+                <div class="card-body">
+                    <p class="card-title"> Saldo disp.(pesos): ${sueldo} </p>
+                </div>
+            </div>
+    
+            <div class="card" style="width: 18rem; margin:3px; font-weight:bold;">
+                <div class="card-body">
+                    <p class="card-title"> Saldo disp.(dolares): ${sueldoDolar} </p>
+                </div>
+            </div>
+        
+        `
+}
 
-    // Recorre el array de gastos y va restando del sueldo
+const mostrarMsj = (icono, titulo, mensaje) => {
+    Swal.fire({
+        icon:  `${icono}`,
+        title: `${titulo}`,
+        text:  `${mensaje}`,    
+    })
+}
+
+/**
+ * Funciones generales:
+ *  actzaSaldoDisp: valida los gastos no aplicados y los resta del saldo disponible
+ *  Enveto divGastos: Elimina los gastos de la aplicacion
+ *  mostrarMsj: Funcion para mostrar mensjes con sweet alert
+ */
+// Funcion que 
+const actzaSaldoDisp = () => {
+
     gastosArr.forEach( obj => {
-        sueldo -= obj.monto
+
+        if (!obj.status) {
+            //Si el gasto tiene monto mayor al saldo disponible, la deja como no aplicado. De lo contrario, la aplica
+            console.error(sueldo, obj.montoPesos)
+            if (sueldo < obj.montoPesos) { 
+                mostrarMsj('warning', 'Advertencia!', `No se puede aplicar el gasto con id ${obj.id} debido a que el sueldo es insuciciente!. Cuando se capture un ingreso mayor al importe del gasto, se descontara automaticamente`)
+            } else {
+                sueldo -= obj.montoPesos
+                obj.status = true 
+                mostrarMsj('success', 'Hecho!', 'El gasto ha sido aplicado correctamente!.') 
+            }
+        } 
     })
 
-    // El sueldo resultante lo guardamos en LS y lo asignamos como nuevo valor en el formulario
+    // Actualizamos el input en el DOM 
     sueldoInput.value = sueldo
-    localStorage.setItem('sueldo', sueldoInput.value)
 
-    divSaldo.innerHTML = `
- 
-        <div class="card" style="width: 18rem; margin:3px">
-            <div class="card-body">
-                <h5 class="card-title"> Saldo disponible: ${sueldo} </h5>
-            </div>
-        </div>
-    
-    `
-}) 
+    // Guardamos la actualizacion del sueldo y de los gastos a LS
+    localStorage.setItem('sueldo', sueldo)
+    localStorage.setItem('gastos', JSON.stringify(gastosArr))
+}
 
-// Evento para eliminar gastos en la aplicacion
 divGastos.addEventListener('click', (e) => {
     // Obtenemos todas las cards de gastos
     const cardGasto = document.querySelectorAll('.card-gasto')
@@ -171,6 +236,6 @@ divGastos.addEventListener('click', (e) => {
 
 })
 
-
+// Funcion de inicio del programa
 iniciaApp()
 
