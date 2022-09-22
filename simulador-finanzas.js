@@ -59,10 +59,8 @@ const iniciaApp = () => {
 
     // Mostramos los gastos almacenados en LS 
     mostrarGastos();
-    
-
-
 }
+
 /**
  * Formularios:
  *  formSaldo: Almacena un nuevo saldo disponible y resta los gastos pendientes automaticamente
