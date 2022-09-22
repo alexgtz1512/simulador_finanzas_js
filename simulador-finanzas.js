@@ -28,7 +28,9 @@ fetch(`https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF343410/datos/op
 .then( (resp) => resp.json())
 .then( (data) => {
     valorDolar = parseFloat(data.bmx.series[0].datos[0].dato)
-    console.log(valorDolar)
+
+    //Mostramos el saldo disponible una vez que recibimos el valor del dolar
+    mostrarDisponible();
 } )
 
 
@@ -36,12 +38,12 @@ fetch(`https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF343410/datos/op
 
 const iniciaApp = () => {
     
-    // Obetnemos el sueldo de LS 
+    // Obtenemos el sueldo de LS 
     let sueldoLS = localStorage.getItem('sueldo')
     
     if ( sueldoLS ) {
         sueldoInput.value = sueldoLS
-        sueldo = sueldoLS
+        sueldo = parseFloat( sueldoLS );
     } else {
         // Inicializamos en cero por primera vez
         sueldoInput.value = 0
@@ -56,7 +58,9 @@ const iniciaApp = () => {
     } 
 
     // Mostramos los gastos almacenados en LS 
-    mostrarGastos();    
+    mostrarGastos();
+    
+
 
 }
 /**
@@ -68,7 +72,7 @@ const iniciaApp = () => {
 formSaldo.addEventListener('submit', (e) => {
     e.preventDefault()
     localStorage.setItem('sueldo', sueldoInput.value)
-    sueldo = sueldoInput.value
+    sueldo = parseFloat(sueldoInput.value);
     actzaSaldoDisp()
     mostrarDisponible()
     mostrarGastos()
@@ -108,7 +112,7 @@ formGasto.addEventListener('submit', (e) => {
  */
 
  const mostrarGastos = () => {
-    console.log(gastosArr)
+
     divGastos.innerHTML = ''
     gastosArr.forEach( (gasto ) => {
         let status = (gasto.status) ? 'Aplicado' : 'No aplicado'
@@ -133,7 +137,7 @@ formGasto.addEventListener('submit', (e) => {
 }
 
 const mostrarDisponible = () => {
-    console.warn(sueldo)
+
         // Calculamos de manera informativa el disponible en dolares
         let sueldoDolar = (sueldo /valorDolar).toFixed(2)
 
@@ -165,17 +169,15 @@ const mostrarMsj = (icono, titulo, mensaje) => {
 /**
  * Funciones generales:
  *  actzaSaldoDisp: valida los gastos no aplicados y los resta del saldo disponible
- *  Enveto divGastos: Elimina los gastos de la aplicacion
+ *  divGastos: Elimina los gastos de la aplicacion
  *  mostrarMsj: Funcion para mostrar mensjes con sweet alert
  */
-// Funcion que 
 const actzaSaldoDisp = () => {
 
     gastosArr.forEach( obj => {
 
         if (!obj.status) {
             //Si el gasto tiene monto mayor al saldo disponible, la deja como no aplicado. De lo contrario, la aplica
-            console.error(sueldo, obj.montoPesos)
             if (sueldo < obj.montoPesos) { 
                 mostrarMsj('warning', 'Advertencia!', `No se puede aplicar el gasto con id ${obj.id} debido a que el sueldo es insuciciente!. Cuando se capture un ingreso mayor al importe del gasto, se descontara automaticamente`)
             } else {
